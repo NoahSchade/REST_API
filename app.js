@@ -11,7 +11,8 @@ const morgan = require('morgan');
 const { check, validationResult } = require('express-validator');
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
-let test2
+let addUser;
+let currentUser;
 // const routes = require('./');
 
 const users = [];
@@ -20,6 +21,7 @@ const users = [];
 const app = express();
 
 const authenticateUser = (req, res, next) => {
+  (async () => {
   let message = null;
 
   // Parse the user's credentials from the Authorization header.
@@ -27,48 +29,90 @@ const authenticateUser = (req, res, next) => {
 
   // If the user's credentials are available...
   if (credentials) {
-    // Attempt to retrieve the user from the data store
-    // by their username (i.e. the user's "key"
-    // from the Authorization header).
-    const user = users.find(u => u.username === credentials.name);
 
-    // If a user was successfully retrieved from the data store...
-    if (user) {
-      // Use the bcryptjs npm package to compare the user's password
-      // (from the Authorization header) to the user's password
-      // that was retrieved from the data store.
-      const authenticated = bcryptjs
-        .compareSync(credentials.pass, user.password);
+      
+      // Attempt to retrieve the user from the data store
+      // by their username (i.e. the user's "key"
+      // from the Authorization header).
 
-      // If the passwords match...
-      if (authenticated) {
-        console.log(`Authentication successful for username: ${user.username}`);
+      // const user = users.find(u => u.emailAddress === credentials.name);
 
-        // Then store the retrieved user object on the request object
-        // so any middleware functions that follow this middleware function
-        // will have access to the user's information.
-        req.currentUser = user;
+      // const user = {
+      //   "firstName": "John",
+      //   "lastName": "Smith",
+      //   "emailAddress": "john@smith.com",
+      //   "password": "$2a$10$YCB3H9lbZiaMBGuV.R.2AuZLDd2whKln73gk4z7q2l9O4YEIfgh8e"
+      // }
+
+      // res.json({
+      //   message: user
+      // });
+
+        
+      let user;
+      
+        await db.sequelize.sync({ force: false });
+        try {
+          user = await User.findOne({
+            where: {
+              emailAddress: credentials.name
+            }
+          });
+
+          currentUser = user;
+
+          // res.json({
+          //   message: "dsafasdfsadff"
+          // });
+        } catch (error) {
+          if (error.name === 'SequelizeValidationError') {
+            const errors = error.errors.map(err => err.message);
+            console.error('Validation errors: ', errors);
+          } else {
+            throw error;
+          }
+        }
+
+      
+
+      // If a user was successfully retrieved from the data store...
+      if (user) {
+        // Use the bcryptjs npm package to compare the user's password
+        // (from the Authorization header) to the user's password
+        // that was retrieved from the data store.
+        const authenticated = bcryptjs
+          .compareSync(credentials.pass, user.password);
+
+        // If the passwords match...
+        if (authenticated) {
+          console.log(`Authentication successful for username: ${user.username}`);
+
+          // Then store the retrieved user object on the request object
+          // so any middleware functions that follow this middleware function
+          // will have access to the user's information.
+          req.currentUser = user;
+        } else {
+          message = `Authentication failure for username: ${user.username}`;
+        }
       } else {
-        message = `Authentication failure for username: ${user.username}`;
+        message = `User not found for username: ${credentials.name}`;
       }
     } else {
-      message = `User not found for username: ${credentials.name}`;
+      message = 'Auth header not found';
     }
-  } else {
-    message = 'Auth header not found';
-  }
 
-  // If user authentication failed...
-  if (message) {
-    console.warn(message);
+    // If user authentication failed...
+    if (message) {
+      console.warn(message);
 
-    // Return a response with a 401 Unauthorized HTTP status code.
-    res.status(401).json({ message: 'Access Denied' });
-  } else {
-    // Or if user authentication succeeded...
-    // Call the next() method.
-    next();
-  }
+      // Return a response with a 401 Unauthorized HTTP status code.
+      res.status(401).json({ message: 'Access Denied' });
+    } else {
+      // Or if user authentication succeeded...
+      // Call the next() method.
+      next();
+    }
+  })();
 };
 
 // variable to enable global error logging
@@ -86,12 +130,20 @@ app.get('/api/users', authenticateUser, (req, res) => {
   const user = req.currentUser;
 
   // res.json({
+  //   message: 'get request successful'
+  // });
+
+  // res.json({
   //   name: user.name,
   //   username: user.username,
   // });
 
   res.json({
-    ...test2
+    "id": currentUser.id,
+    "firstName": currentUser.firstName,
+    "lastName": currentUser.lastName,
+    "emailAddress": currentUser.emailAddress,
+    "password": currentUser.password
   });
 });
 // Route that creates a new user.
@@ -124,10 +176,10 @@ app.post('/api/users', [
   // Hash the new user's password.
   user.password = bcryptjs.hashSync(user.password);
 
-  test2 = user;
+  addUser = user;
 
   // res.json({
-  //   ...test2
+  //   ...addUser
   // });
 
   addToDatabase();
@@ -146,6 +198,33 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!',
   });
+
+  // readFromDatabase();
+
+  // (async () => {
+  //   await db.sequelize.sync({ force: false });
+  //   try {
+  //     people = await User.findOne({
+  //       where: {
+  //         emailAddress: 'john@smith.com'
+  //       }
+  //     });
+  //     res.json({
+  //       message: people
+  //     });
+  //   } catch (error) {
+  //     if (error.name === 'SequelizeValidationError') {
+  //       const errors = error.errors.map(err => err.message);
+  //       console.error('Validation errors: ', errors);
+  //     } else {
+  //       throw error;
+  //     }
+  //   }
+  // })();
+
+  // res.json({
+  //   message: people
+  // });
 });
 
 // Add routes.
@@ -217,7 +296,7 @@ function addToDatabase() {
         //   password: 'qwerty'
         // }),
         User.create({
-          ...test2
+          ...addUser
         })
       ]);
     })
@@ -270,4 +349,24 @@ function addToDatabase() {
       // process.exit();
     })
     .catch(err => console.error(err));
-  }
+}
+
+function readFromDatabase() {
+  (async () => {
+    await db.sequelize.sync({ force: false });
+    try {
+      people = await User.findOne({
+        where: {
+          emailAddress: 'john@smith.com'
+        }
+      });
+    } catch (error) {
+      if (error.name === 'SequelizeValidationError') {
+        const errors = error.errors.map(err => err.message);
+        console.error('Validation errors: ', errors);
+      } else {
+        throw error;
+      }
+    }
+  })();
+}  
