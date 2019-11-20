@@ -13,7 +13,6 @@ const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
 let addUser;
 let currentUser;
-// const routes = require('./');
 
 const users = [];
 
@@ -37,18 +36,6 @@ const authenticateUser = (req, res, next) => {
 
       // const user = users.find(u => u.emailAddress === credentials.name);
 
-      // const user = {
-      //   "firstName": "John",
-      //   "lastName": "Smith",
-      //   "emailAddress": "john@smith.com",
-      //   "password": "$2a$10$YCB3H9lbZiaMBGuV.R.2AuZLDd2whKln73gk4z7q2l9O4YEIfgh8e"
-      // }
-
-      // res.json({
-      //   message: user
-      // });
-
-        
       let user;
       
         await db.sequelize.sync({ force: false });
@@ -61,9 +48,6 @@ const authenticateUser = (req, res, next) => {
 
           currentUser = user;
 
-          // res.json({
-          //   message: "dsafasdfsadff"
-          // });
         } catch (error) {
           if (error.name === 'SequelizeValidationError') {
             const errors = error.errors.map(err => err.message);
@@ -129,15 +113,6 @@ app.use(morgan('dev'));
 app.get('/api/users', authenticateUser, (req, res) => {
   const user = req.currentUser;
 
-  // res.json({
-  //   message: 'get request successful'
-  // });
-
-  // res.json({
-  //   name: user.name,
-  //   username: user.username,
-  // });
-
   res.json({
     "id": currentUser.id,
     "firstName": currentUser.firstName,
@@ -146,6 +121,7 @@ app.get('/api/users', authenticateUser, (req, res) => {
     "password": currentUser.password
   });
 });
+
 // Route that creates a new user.
 app.post('/api/users', [
   // check('name')
@@ -178,16 +154,12 @@ app.post('/api/users', [
 
   addUser = user;
 
-  // res.json({
-  //   ...addUser
-  // });
-
   addToDatabase();
 
   // Add the user to the `users` array.
   users.push(user);
 
-  res.location('/')
+  res.location('/');
 
   // Set the status to 201 Created and end the response.
   return res.status(201).end();
@@ -198,37 +170,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to the REST API project!',
   });
-
-  // readFromDatabase();
-
-  // (async () => {
-  //   await db.sequelize.sync({ force: false });
-  //   try {
-  //     people = await User.findOne({
-  //       where: {
-  //         emailAddress: 'john@smith.com'
-  //       }
-  //     });
-  //     res.json({
-  //       message: people
-  //     });
-  //   } catch (error) {
-  //     if (error.name === 'SequelizeValidationError') {
-  //       const errors = error.errors.map(err => err.message);
-  //       console.error('Validation errors: ', errors);
-  //     } else {
-  //       throw error;
-  //     }
-  //   }
-  // })();
-
-  // res.json({
-  //   message: people
-  // });
 });
-
-// Add routes.
-// app.use('/api', routes);
 
 // send 404 if no other route matched
 app.use((req, res) => {
@@ -257,17 +199,6 @@ const server = app.listen(app.get('port'), () => {
   console.log(`Express server is listening on port ${server.address().port}`);
 });
 
-// (async () => {
-//   await db.sequelize.sync({ force: true });
-
-//   try {
-//     await db.sequelize.authenticate();
-//     console.log('Connection to the database successful!');
-//   } catch (error) {
-//     console.error('Error connecting to the database: ', error);
-//   }
-// })();
-
 // Define variables for the people and courses.
 // NOTE: We'll use these variables to assist with the creation
 // of our related data after we've defined the relationships
@@ -275,7 +206,6 @@ const server = app.listen(app.get('port'), () => {
 let bradBird;
 
 function addToDatabase() {
-
   console.log('Testing the connection to the database...');
   // Test the connection to the database.
   sequelize
@@ -349,24 +279,4 @@ function addToDatabase() {
       // process.exit();
     })
     .catch(err => console.error(err));
-}
-
-function readFromDatabase() {
-  (async () => {
-    await db.sequelize.sync({ force: false });
-    try {
-      people = await User.findOne({
-        where: {
-          emailAddress: 'john@smith.com'
-        }
-      });
-    } catch (error) {
-      if (error.name === 'SequelizeValidationError') {
-        const errors = error.errors.map(err => err.message);
-        console.error('Validation errors: ', errors);
-      } else {
-        throw error;
-      }
-    }
-  })();
-}  
+} 
