@@ -11,9 +11,9 @@ const morgan = require('morgan');
 const { check, validationResult } = require('express-validator');
 const bcryptjs = require('bcryptjs');
 const auth = require('basic-auth');
+
 let addUser;
 let currentUser;
-
 const users = [];
 
 // create the Express app
@@ -122,6 +122,8 @@ app.get('/api/users', authenticateUser, (req, res) => {
   });
 });
 
+require('./courses')(app);
+
 // Route that creates a new user.
 app.post('/api/users', [
   // check('name')
@@ -154,7 +156,7 @@ app.post('/api/users', [
 
   addUser = user;
 
-  addToDatabase();
+  addUserToDatabase();
 
   // Add the user to the `users` array.
   users.push(user);
@@ -205,7 +207,7 @@ const server = app.listen(app.get('port'), () => {
 // (or associations) between our models.
 let bradBird;
 
-function addToDatabase() {
+function addUserToDatabase() {
   console.log('Testing the connection to the database...');
   // Test the connection to the database.
   sequelize
@@ -279,4 +281,4 @@ function addToDatabase() {
       // process.exit();
     })
     .catch(err => console.error(err));
-} 
+}
