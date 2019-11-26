@@ -185,7 +185,8 @@ module.exports = function(app){
 
         for (let i = 0; i < allCourses.length; i++)  {
           if(i === 0){
-            stringifyAllCourses += JSON.stringify({ id: allCourses[i].id,
+            stringifyAllCourses += JSON.stringify({ 
+                                                    id: allCourses[i].id,
                                                     title: allCourses[i].title,
                                                     description: allCourses[i].description,
                                                     estimatedTime: allCourses[i].estimatedTime,
@@ -193,7 +194,8 @@ module.exports = function(app){
                                                     user: await User.findOne({where: {id: allCourses[i].userId}})
                                                   });
           } else {
-            stringifyAllCourses += "," + JSON.stringify({ id: allCourses[i].id,
+            stringifyAllCourses += "," + JSON.stringify({
+                                                          id: allCourses[i].id,
                                                           title: allCourses[i].title,
                                                           description: allCourses[i].description,
                                                           estimatedTime: allCourses[i].estimatedTime,
@@ -228,5 +230,50 @@ module.exports = function(app){
     })();
   });
 
-  
+  app.get('/api/courses/:id', (req, res) => {
+    (async () => {
+      
+      await db.sequelize.sync({ force: false });
+      try {
+        let course = await Course.findByPk(req.params.id);
+
+        // let stringifyCourse = JSON.stringify({ 
+        //                                        id: course.id,
+        //                                        title: course.title,
+        //                                        description: course.description,
+        //                                        estimatedTime: course.estimatedTime,
+        //                                        materialsNeeded: course.materialsNeeded,
+        //                                        user: await User.findOne({where: {id: course.userId}})
+        //                                      });
+
+
+        // let parseCourse = JSON.parse(stringifyCourse);
+        
+
+        res.json({
+          // ...parseCourse
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          estimatedTime: course.estimatedTime,
+          materialsNeeded: course.materialsNeeded,
+          user: await User.findOne({where: {id: course.userId}})
+        });
+
+        
+
+        
+
+      } catch (error) {
+        if (error.name === 'SequelizeValidationError') {
+          const errors = error.errors.map(err => err.message);
+          console.error('Validation errors: ', errors);
+        } else {
+          throw error;
+        }
+      }
+    })();
+  });
+
+
 }
